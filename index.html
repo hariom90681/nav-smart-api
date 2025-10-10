@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NavSmart</title>
+    <!-- Link external stylesheet -->
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+
+    <div class="header">
+        <h1>NavSmart</h1>
+        <h3>AI based Itinerary Planning and Navigation App</h3>
+    </div>
+
+    <div class="main-container">
+        <div class="left-panel">
+            <div id="map"></div>
+        </div>
+
+        <!-- Right panel for chatbot & itinerary -->
+        <div class="right-panel">
+            <div id="chatbot">
+                <div id="chatContent">
+                    <h3>AI Itinerary Assistant</h3>
+                    <p><strong>Chatbot:</strong> How can I assist you with your travel plans?</p>
+                    <div id="transcription" style="font-style: italic; color: #555;"></div>
+
+                    <div id="itineraryDisplay">
+                        <h4>Your Itinerary</h4>
+                        <ul id="itineraryList"></ul>
+                    </div>
+                </div>
+
+                <!-- Buttons at the bottom -->
+                <div id="chatControls">
+                    <button id="micBtn">🎙️ Speak Destination</button>
+                    <button id="itineraryBtn">🧭 Generate Itinerary</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <h5>A primitive prototype by team Nav-E-Gators</h5>
+    </div>
+
+    <!-- Link external JavaScript -->
+    <script defer src="/static/script.js"></script>
+
+    <!-- Google Maps API (replace My_Key with your actual key) -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDDgJKSce1dwXMTZ886PDMqjaJrF9z1ErA"></script>
+</body>
+</html>

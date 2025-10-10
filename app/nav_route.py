@@ -1,38 +1,82 @@
-import io
+from fastapi import APIRouter
+from pydantic import BaseModel
+from geopy.geocoders import Nominatim
+from openai import OpenAI
+import json
 
-import librosa
-from fastapi import APIRouter, UploadFile, File
+# Initialize geocoder and OpenAI
+geolocator = Nominatim(user_agent="navsmart")
+client = OpenAI(api_key="https://maps.googleapis.com/maps/api/js?key=AIzaSyDDgJKSce1dwXMTZ886PDMqjaJrF9z1ErA&callback=initMap")  # Replace with actual key
 
-from app.map_prompt import extract_locations, get_coordinates
-from app.text_transform import asr
+# ------------------ ROUTE ROUTER ------------------
+route_router = APIRouter(tags=["Route"])
 
-router = APIRouter(prefix="/location", tags=["location"])
+class MessageRequest(BaseModel):
+    message: str
 
+@route_router.post("/location/get-route")
+async def get_route(req: MessageRequest):
+    message = req.message.lower()
 
-@router.post("/get-route")
-async def get_route(audio_file: UploadFile = File(...)):
-    # Read uploaded bytes
-    audio_bytes = await audio_file.read()
-    audio_file_obj = io.BytesIO(audio_bytes)
+    if "from" in message and "to" in message:
+        parts = message.split("from")[1].split("to")
+        start_location = parts[0].strip()
+        end_location = parts[1].strip()
+    else:
+        return {
+            "reply": "Sorry, I couldn't understand the route request.",
+            "start": {"error": "Missing 'from' location"},
+            "end": {"error": "Missing 'to' location"}
+        }
 
-    # Decode audio to numpy (force 16kHz for Whisper)
-    audio_array, _ = librosa.load(audio_file_obj, sr=16000, mono=True)
+    start = geolocator.geocode(start_location)
+    end = geolocator.geocode(end_location)
 
-    # Step 1: Transcribe (no sampling_rate arg anymore)
-    transcription = asr(audio_array)["text"]
-
-    # Step 2: Extract locations
-    locations = extract_locations(transcription)
-
-    if len(locations) < 2:
-        return {"error": "Could not detect both start and end locations", "transcription": transcription}
-
-    # Step 3: Geocode
-    start = get_coordinates(locations[0])
-    end = get_coordinates(locations[1])
+    if not start or not end:
+        return {
+            "reply": "Sorry, I couldn't find one of the locations.",
+            "start": {"error": "Invalid start location"} if not start else {},
+            "end": {"error": "Invalid end location"} if not end else {}
+        }
 
     return {
-        "transcription": transcription,
-        "start": start,
-        "end": end
+        "reply": f"Here's the best route from {start_location} to {end_location}.",
+        "start": {"latitude": start.latitude, "longitude": start.longitude},
+        "end": {"latitude": end.latitude, "longitude": end.longitude}
     }
+
+# ------------------ ITINERARY ROUTER ------------------
+itinerary_router = APIRouter(tags=["Itinerary"])
+
+class ItineraryRequest(BaseModel):
+    message: str
+
+
+@itinerary_router.post("/location/get-itinerary")
+async def get_itinerary(req: ItineraryRequest):
+    prompt = f"""
+    User message: "{req.message}"
+    Generate a travel itinerary in JSON format with:
+    - reply: a short summary message
+    - itinerary: a list of days, each with:
+      - day
+      - location
+      - activities (list of strings)
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7
+        )
+
+        content = response.choices[0].message.content
+        try:
+            itinerary_data = json.loads(content)
+            return itinerary_data
+        except Exception as e:
+            return {"error": f"Failed to parse itinerary: {str(e)}"}
+
+    except Exception as e:
+        return {"error": f"OpenAI API call failed: {str(e)}"}
