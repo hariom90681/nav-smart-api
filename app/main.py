@@ -16,4 +16,4 @@ app.include_router(itinerary_router)
 
 @app.get("/")
 async def root():
-    return FileResponse('static/index.html')
+    return FileResponse('index.html')
