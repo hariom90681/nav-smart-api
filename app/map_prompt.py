@@ -22,16 +22,6 @@ def extract_locations(text: str):
     entities = ner_pipeline(text)
     locations = [ent["word"] for ent in entities if ent["entity_group"] in ["LOC", "ORG", "PER", "MISC", "GPE"]]
     return locations
-#
-#
-# def get_coordinates(place: str):
-#     try:
-#         loc = geolocator.geocode(place)
-#         if loc:
-#             return {"name": place, "latitude": loc.latitude, "longitude": loc.longitude}
-#         return {"name": place, "error": "Not found"}
-#     except GeocoderUnavailable:
-#         return {"name": place, "error": "Geocoding service unavailable"}
 
 
 def get_route_from_text(text: str) -> dict:
@@ -48,26 +38,6 @@ def get_route_from_text(text: str) -> dict:
     end = get_coordinates(locations[1])
 
     return {"start": start, "end": end}
-
-
-# def extract_locations(text: str):
-#     """
-#     Extract start and end locations from natural sentences like:
-#     - "from Delhi to Kolkata"
-#     - "go to Paris from Berlin"
-#     """
-#
-#     # Try pattern: "from X to Y"
-#     match = re.search(r"from (.+?) to (.+)", text, re.IGNORECASE)
-#     if match:
-#         return match.group(1).strip(), match.group(2).strip()
-#
-#     # Try pattern: "to X from Y"
-#     match = re.search(r"to (.+?) from (.+)", text, re.IGNORECASE)
-#     if match:
-#         return match.group(2).strip(), match.group(1).strip()
-#
-#     return None, None
 
 
 def get_coordinates(place: str):

@@ -3,92 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Navigation POC</title>
+    <title>NavSmart</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: #f4f4f9;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            width: 100%;
-            max-width: 800px;
-            background: white;
-            padding: 2em;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #001e50;
-            text-align: center;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 1em;
-        }
-        input[type="file"] {
-            border: 1px solid #ccc;
-            padding: 10px;
-            border-radius: 4px;
-        }
-        button {
-            padding: 12px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 1.1em;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:disabled {
-            background-color: #aaa;
-            cursor: not-allowed;
-        }
-        button:hover:not(:disabled) {
-            background-color: #0056b3;
-        }
-        #results {
-            margin-top: 2em;
-            border-top: 1px solid #eee;
-            padding-top: 1em;
-            text-align: center;
-        }
-        #transcription {
-            font-style: italic;
-            color: #555;
-            margin-bottom: 1em;
-        }
-        #map {
-            height: 450px;
-            width: 100%;
-            background-color: #e9e9e9;
-            border-radius: 4px;
-            margin-top: 1em;
-        }
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: #f4f4f9;
+        color: #333;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .header {
+        text-align: center;
+        padding: 20px;
+        background-color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    form {
+        margin-top: 10px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    input[type="file"] {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    button {
+        padding: 12px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 1em;
+        cursor: pointer;
+    }
+
+    .main-container {
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+        padding: 20px;
+        gap: 20px;
+    }
+
+    .left-panel, .right-panel {
+        flex: 1;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 20px;
+        overflow: auto;
+    }
+
+    #map {
+        height: 100%;
+        width: 100%;
+        border-radius: 4px;
+        background-color: #e9e9e9;
+    }
+
+    #chatbot {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        width: 100%;
+        border-radius: 4px;
+        background-color: #f0f0f0;
+        padding: 10px;
+    }
+
+    
+    #chatbot form {
+        margin-top: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>AI Navigation App</h1>
-        <p>Upload your voice command to generate a route.</p>
-        <form id="routeForm">
-            <input type="file" id="audioFileInput" accept="audio/*" required>
-            <button id="submitBtn" type="submit">Generate Route</button>
-        </form>
+    <div class="header">
+        <h1>NavSmart</h1>
+        <h3>AI-Itinerary Planning and Navigation App</h3>
+        <h5>by Nav-E-Gators</h5>
+    </div>
 
-        <div id="results">
-            <p id="transcription"></p>
+    <div class="main-container">
+        <div class="left-panel">
             <div id="map"></div>
         </div>
+        <div class="right-panel">
+            <div id="chatbot">
+                <!-- Chatbot UI goes here -->
+                <p><strong>Chatbot:</strong> How can I assist you with your travel plans?</p>
+                <p id="transcription" style="font-style: italic; color: #555;"></p>
+                <form id="routeForm">
+                <p>Upload your voice command to generate a route.</p>
+                <input type="file" id="audioFileInput" accept="audio/*" required>
+                <button id="submitBtn" type="submit">Generate Route</button>
+            </form>
+            </div>
+        </div>
     </div>
+
 
     <script>
         // Declare all variables in the higher scope
@@ -192,6 +221,6 @@
             });
         }
     </script>
-    <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBflVJLrL1OYCOrKwWZtQZWwhF23A-uBX0&callback=initMap"></script>
+    <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDDgJKSce1dwXMTZ886PDMqjaJrF9z1ErA&callback=initMap"></script>
 </body>
 </html>
