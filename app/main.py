@@ -1,17 +1,3 @@
-# from fastapi import FastAPI
-#
-# from app import nav_route
-#
-# app = FastAPI(title="AI Navigation app", version="1.0")
-#
-# app.include_router(nav_route.router)
-#
-# @app.get("/")
-# def root():
-#     return {"message": "Welcome to AI Navigation API"}
-
-# new
-
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
