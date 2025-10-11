@@ -18,45 +18,58 @@ class MessageRequest(BaseModel):
 
 @route_router.post("/location/get-details-route")
 async def get_details_route(req: MessageRequest):
-    message = req.message.lower()
+    message = req.message.lower().strip()
 
-    # Extract start and end
     if "from" in message and "to" in message:
-        parts = message.split("from")[1].split("to")
-        start_location = parts[0].strip()
-        end_location = parts[1].strip()
+        try:
+            after_from = message.split("from", 1)[1]
+            parts = after_from.split("to", 1)
+            start_location = parts[0].strip()
+            end_location = parts[1].strip()
+        except IndexError:
+            return {
+                "reply": "Sorry, I couldn't parse your route request properly.",
+                "start": {"error": "Missing start location"},
+                "end": {"error": "Missing end location"}
+            }
     else:
         return {
-            "reply": "Sorry, I couldn't understand the route request.",
-            "start": {"error": "Missing 'from' location"},
-            "end": {"error": "Missing 'to' location"}
+            "reply": "Sorry, I couldn't understand the route request. Please include 'from' and 'to'.",
+            "start": {"error": "Missing 'from'"},
+            "end": {"error": "Missing 'to'"}
         }
 
-    # Geocode both locations
-
-    # ✅ Fetch all stop points between start and end
+    # Use your function to fetch route data here
     route_data = get_all_stop_points(
         start_location,
         end_location,
-        "AIzaSyDDgJKSce1dwXMTZ886PDMqjaJrF9z1ErA"
+        "AIzaSyDDgJKSce1dwXMTZ886PDMqjaJrF9z1ErA"  # Your Google Maps API key
     )
 
-    # ✅ Success Response
     return route_data
+
 
 @route_router.post("/location/get-route")
 async def get_route(req: MessageRequest):
-    message = req.message.lower()
+    message = req.message.lower().strip()
 
     if "from" in message and "to" in message:
-        parts = message.split("from")[1].split("to")
-        start_location = parts[0].strip()
-        end_location = parts[1].strip()
+        try:
+            after_from = message.split("from", 1)[1]
+            parts = after_from.split("to", 1)
+            start_location = parts[0].strip()
+            end_location = parts[1].strip()
+        except IndexError:
+            return {
+                "reply": "Sorry, I couldn't parse your route request properly.",
+                "start": {"error": "Missing start location"},
+                "end": {"error": "Missing end location"}
+            }
     else:
         return {
-            "reply": "Sorry, I couldn't understand the route request.",
-            "start": {"error": "Missing 'from' location"},
-            "end": {"error": "Missing 'to' location"}
+            "reply": "Sorry, please specify 'from' and 'to' locations.",
+            "start": {"error": "Missing 'from'"},
+            "end": {"error": "Missing 'to'"}
         }
 
     start = geolocator.geocode(start_location)
@@ -64,7 +77,7 @@ async def get_route(req: MessageRequest):
 
     if not start or not end:
         return {
-            "reply": "Sorry, I couldn't find one of the locations.",
+            "reply": "Sorry, one or both locations could not be found.",
             "start": {"error": "Invalid start location"} if not start else {},
             "end": {"error": "Invalid end location"} if not end else {}
         }
@@ -74,6 +87,7 @@ async def get_route(req: MessageRequest):
         "start": {"latitude": start.latitude, "longitude": start.longitude},
         "end": {"latitude": end.latitude, "longitude": end.longitude}
     }
+
 
 # ------------------ ITINERARY ROUTER ------------------
 itinerary_router = APIRouter(tags=["Itinerary"])
@@ -85,14 +99,14 @@ class ItineraryRequest(BaseModel):
 @itinerary_router.post("/location/get-itinerary")
 async def get_itinerary(req: ItineraryRequest):
     prompt = f"""
-    User message: "{req.message}"
-    Generate a travel itinerary in JSON format with:
-    - reply: a short summary message
-    - itinerary: a list of days, each with:
-      - day
-      - location
-      - activities (list of strings)
-    """
+User message: "{req.message}"
+Generate a travel itinerary in JSON format with:
+- reply: a short summary message
+- itinerary: a list of days, each with:
+  - day
+  - location
+  - activities (list of strings)
+"""
 
     try:
         response = client.chat.completions.create(
@@ -102,11 +116,12 @@ async def get_itinerary(req: ItineraryRequest):
         )
 
         content = response.choices[0].message.content
+
         try:
             itinerary_data = json.loads(content)
             return itinerary_data
-        except Exception as e:
-            return {"error": f"Failed to parse itinerary: {str(e)}"}
+        except json.JSONDecodeError as e:
+            return {"error": f"Failed to parse itinerary JSON: {str(e)}"}
 
     except Exception as e:
         return {"error": f"OpenAI API call failed: {str(e)}"}
