@@ -6,11 +6,9 @@ import json
 
 from app.route_details import get_all_stop_points
 
-# Initialize geocoder and OpenAI
 geolocator = Nominatim(user_agent="navsmart")
 client = OpenAI(api_key="https://maps.googleapis.com/maps/api/js?key=AIzaSyDDgJKSce1dwXMTZ886PDMqjaJrF9z1ErA&callback=initMap")  # Replace with actual key
 
-# ------------------ ROUTE ROUTER ------------------
 route_router = APIRouter(tags=["Route"])
 
 class MessageRequest(BaseModel):
@@ -39,7 +37,7 @@ async def get_details_route(req: MessageRequest):
             "end": {"error": "Missing 'to'"}
         }
 
-    # Use your function to fetch route data here
+   
     route_data = get_all_stop_points(
         start_location,
         end_location,
@@ -89,7 +87,6 @@ async def get_route(req: MessageRequest):
     }
 
 
-# ------------------ ITINERARY ROUTER ------------------
 itinerary_router = APIRouter(tags=["Itinerary"])
 
 class ItineraryRequest(BaseModel):

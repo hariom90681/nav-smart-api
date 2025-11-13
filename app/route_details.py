@@ -17,7 +17,6 @@ def get_all_stop_points(start, stop, api_key):
         print("Error:", data["status"])
         return []
 
-    # Take the first route
     route = data["routes"][0]
     leg = route["legs"][0]
 
@@ -27,15 +26,12 @@ def get_all_stop_points(start, stop, api_key):
     print(f"Duration: {leg['duration']['text']}")
     print("Extracting all stop points...")
 
-    # Decode the overview polyline to get all lat/lng points
     poly_points = polyline.decode(route["overview_polyline"]["points"])
 
-    # Each item in poly_points = (latitude, longitude)
     for i, (lat, lng) in enumerate(poly_points):
         print(f"{i+1}. ({lat}, {lng})")
 
     return poly_points
 
-# Example usage
 api_key = "AIzaSyDDgJKSce1dwXMTZ886PDMqjaJrF9z1ErA"
 points = get_all_stop_points("Kolkata,IN", "Delhi,IN", api_key)
