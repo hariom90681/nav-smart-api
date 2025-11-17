@@ -1,26 +1,29 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from geopy.geocoders import Nominatim
-from openai import OpenAI
 import json
 
 from app.route_details import get_all_stop_points
+from app.mistral_client import mistral_client  # ✅ import Mistral client
 
-# Initialize geocoder and OpenAI
+# Initialize geocoder
 geolocator = Nominatim(user_agent="navsmart")
-client = OpenAI(api_key="https://maps.googleapis.com/maps/api/js?key=AIzaSyDDgJKSce1dwXMTZ886PDMqjaJrF9z1ErA&callback=initMap")  # Replace with actual key
 
 # ------------------ ROUTE ROUTER ------------------
 route_router = APIRouter(tags=["Route"])
+itinerary_router = APIRouter(tags=["Itinerary"])
 
 class MessageRequest(BaseModel):
     message: str
+
+class ItineraryRequest(BaseModel):
+    message: str
+
 
 @route_router.post("/location/get-details-route")
 async def get_details_route(req: MessageRequest):
     message = req.message.lower()
 
-    # Extract start and end
     if "from" in message and "to" in message:
         parts = message.split("from")[1].split("to")
         start_location = parts[0].strip()
@@ -32,17 +35,14 @@ async def get_details_route(req: MessageRequest):
             "end": {"error": "Missing 'to' location"}
         }
 
-    # Geocode both locations
-
-    # ✅ Fetch all stop points between start and end
     route_data = get_all_stop_points(
         start_location,
         end_location,
         "AIzaSyDDgJKSce1dwXMTZ886PDMqjaJrF9z1ErA"
     )
 
-    # ✅ Success Response
     return route_data
+
 
 @route_router.post("/location/get-route")
 async def get_route(req: MessageRequest):
@@ -75,38 +75,44 @@ async def get_route(req: MessageRequest):
         "end": {"latitude": end.latitude, "longitude": end.longitude}
     }
 
+
 # ------------------ ITINERARY ROUTER ------------------
-itinerary_router = APIRouter(tags=["Itinerary"])
-
-class ItineraryRequest(BaseModel):
-    message: str
-
-
 @itinerary_router.post("/location/get-itinerary")
 async def get_itinerary(req: ItineraryRequest):
     prompt = f"""
+    You are an expert travel planner AI.
     User message: "{req.message}"
-    Generate a travel itinerary in JSON format with:
-    - reply: a short summary message
-    - itinerary: a list of days, each with:
-      - day
-      - location
-      - activities (list of strings)
+
+    Generate a travel itinerary in valid JSON format:
+    {{
+      "reply": "<short friendly summary>",
+      "itinerary": [
+        {{
+          "day": "Day 1",
+          "location": "<city or area>",
+          "activities": ["<activity1>", "<activity2>", ...]
+        }}
+      ]
+    }}
     """
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
+        # ✅ Call Mistral model
+        response = mistral_client.text_generation(
+            prompt,
+            max_new_tokens=800,
+            temperature=0.7,
+            repetition_penalty=1.1,
         )
 
-        content = response.choices[0].message.content
-        try:
-            itinerary_data = json.loads(content)
-            return itinerary_data
-        except Exception as e:
-            return {"error": f"Failed to parse itinerary: {str(e)}"}
+        # Clean and parse the output
+        content = response.strip()
+        content = content.replace("```json", "").replace("```", "").strip()
 
+        itinerary_data = json.loads(content)
+        return itinerary_data
+
+    except json.JSONDecodeError:
+        return {"error": "Model output was not valid JSON", "raw_output": content}
     except Exception as e:
-        return {"error": f"OpenAI API call failed: {str(e)}"}
+        return {"error": f"Mistral API call failed: {str(e)}"}
