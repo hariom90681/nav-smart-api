@@ -55,6 +55,7 @@ function getCleanMessage() {
     return transcriptionDiv.textContent.replace('You said: "', '').replace('"', '');
 }
 
+/*
 async function fetchRoute(message) {
     try {
         const response = await fetch('/location/get-route', {
@@ -97,6 +98,56 @@ function displayRoute(data) {
         }
     });
 }
+*/
+
+async function fetchRoute(message) {
+    try {
+        transcriptionDiv.textContent = "Fetching route...";
+
+        const response = await fetch('/location/get-details-route', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+        });
+
+        const data = await response.json();
+
+        if (!Array.isArray(data) || data.length === 0) {
+            transcriptionDiv.textContent = "No route found or invalid response.";
+            return;
+        }
+
+        drawRoutePolyline(data);
+
+    } catch (error) {
+        transcriptionDiv.textContent = `Route error: ${error.message}`;
+    }
+}
+
+function drawRoutePolyline(points) {
+    const path = points.map(([lat, lng]) => ({ lat, lng }));
+
+    // Center the map
+    if (path.length > 0) {
+        map.setCenter(path[0]);
+    }
+
+    // Clear old route
+    directionsRenderer.setMap(null);
+
+    // Draw polyline
+    new google.maps.Polyline({
+        path: path,
+        geodesic: true,
+        strokeColor: "#007bff",
+        strokeOpacity: 1.0,
+        strokeWeight: 4,
+        map: map
+    });
+
+    transcriptionDiv.textContent = "✅ Route plotted.";
+}
+
 
 async function fetchItinerary(message) {
     try {

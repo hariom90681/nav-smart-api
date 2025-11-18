@@ -9,7 +9,6 @@ from app.mistral_client import mistral_client  # ✅ import Mistral client
 # Initialize geocoder
 geolocator = Nominatim(user_agent="navsmart")
 
-# ------------------ ROUTE ROUTER ------------------
 route_router = APIRouter(tags=["Route"])
 itinerary_router = APIRouter(tags=["Itinerary"])
 
@@ -22,23 +21,31 @@ class ItineraryRequest(BaseModel):
 
 @route_router.post("/location/get-details-route")
 async def get_details_route(req: MessageRequest):
-    message = req.message.lower()
+    message = req.message.lower().strip()
 
     if "from" in message and "to" in message:
-        parts = message.split("from")[1].split("to")
-        start_location = parts[0].strip()
-        end_location = parts[1].strip()
+        try:
+            after_from = message.split("from", 1)[1]
+            parts = after_from.split("to", 1)
+            start_location = parts[0].strip()
+            end_location = parts[1].strip()
+        except IndexError:
+            return {
+                "reply": "Sorry, I couldn't parse your route request properly.",
+                "start": {"error": "Missing start location"},
+                "end": {"error": "Missing end location"}
+            }
     else:
         return {
-            "reply": "Sorry, I couldn't understand the route request.",
-            "start": {"error": "Missing 'from' location"},
-            "end": {"error": "Missing 'to' location"}
+            "reply": "Sorry, I couldn't understand the route request. Please include 'from' and 'to'.",
+            "start": {"error": "Missing 'from'"},
+            "end": {"error": "Missing 'to'"}
         }
 
     route_data = get_all_stop_points(
         start_location,
         end_location,
-        "AIzaSyDDgJKSce1dwXMTZ886PDMqjaJrF9z1ErA"
+        "AIzaSyDDgJKSce1dwXMTZ886PDMqjaJrF9z1ErA"  # Your Google Maps API key
     )
 
     return route_data
@@ -46,17 +53,25 @@ async def get_details_route(req: MessageRequest):
 
 @route_router.post("/location/get-route")
 async def get_route(req: MessageRequest):
-    message = req.message.lower()
+    message = req.message.lower().strip()
 
     if "from" in message and "to" in message:
-        parts = message.split("from")[1].split("to")
-        start_location = parts[0].strip()
-        end_location = parts[1].strip()
+        try:
+            after_from = message.split("from", 1)[1]
+            parts = after_from.split("to", 1)
+            start_location = parts[0].strip()
+            end_location = parts[1].strip()
+        except IndexError:
+            return {
+                "reply": "Sorry, I couldn't parse your route request properly.",
+                "start": {"error": "Missing start location"},
+                "end": {"error": "Missing end location"}
+            }
     else:
         return {
-            "reply": "Sorry, I couldn't understand the route request.",
-            "start": {"error": "Missing 'from' location"},
-            "end": {"error": "Missing 'to' location"}
+            "reply": "Sorry, please specify 'from' and 'to' locations.",
+            "start": {"error": "Missing 'from'"},
+            "end": {"error": "Missing 'to'"}
         }
 
     start = geolocator.geocode(start_location)
@@ -64,7 +79,7 @@ async def get_route(req: MessageRequest):
 
     if not start or not end:
         return {
-            "reply": "Sorry, I couldn't find one of the locations.",
+            "reply": "Sorry, one or both locations could not be found.",
             "start": {"error": "Invalid start location"} if not start else {},
             "end": {"error": "Invalid end location"} if not end else {}
         }
