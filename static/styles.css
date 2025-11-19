@@ -135,6 +135,14 @@ button {
     transform: scale(0.97);
 }
 
+#messages {
+    overflow-y: auto;
+}
+
+#messages p {
+    white-space: pre-wrap;
+    margin: 0.5em 0;
+}
 #chatControls input#chatInput {
     flex: 1;
     padding: 10px;

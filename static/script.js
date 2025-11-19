@@ -82,6 +82,7 @@ function setupChatSocket() {
 function appendMessage(role, text) {
     const container = document.getElementById('messages') || document.getElementById('chatContent');
     const p = document.createElement('p');
+    p.className = role.toLowerCase();
     p.textContent = `${role}: ${text}`;
     container.appendChild(p);
     container.scrollTop = container.scrollHeight;
@@ -91,57 +92,24 @@ function appendMessage(role, text) {
 function sendChatMessage() {
     const input = document.getElementById('chatInput');
     const text = input ? input.value.trim() : '';
-    if (!text || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+    if (!text) return;
     appendMessage('You', text);
     lastAssistantEl = appendMessage('Assistant', '');
-    chatSocket.send(text);
-    input.value = '';
-}
-
-/*
-async function fetchRoute(message) {
-    try {
-        const response = await fetch('/location/get-route', {
+    if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+        chatSocket.send(text);
+    } else {
+        fetch('/chat/ollama', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({ message: text })
+        }).then(r => r.json()).then(data => {
+            lastAssistantEl.textContent += (data.reply || data.error || '');
+        }).catch(() => {
+            lastAssistantEl.textContent += ' (failed to reach chat server)';
         });
-
-        const data = await response.json();
-        displayRoute(data);
-    } catch (error) {
-        transcriptionDiv.textContent = `Route error: ${error.message}`;
     }
+    if (input) input.value = '';
 }
-
-function displayRoute(data) {
-    const start = data.start;
-    const end = data.end;
-
-    if (start.error || end.error) {
-        let errorMessage = "Could not plot route. ";
-        if (start.error) errorMessage += `Start location error: ${start.error}. `;
-        if (end.error) errorMessage += `End location error: ${end.error}.`;
-        alert(errorMessage);
-        return;
-    }
-
-    const startLatLng = new google.maps.LatLng(start.latitude, start.longitude);
-    const endLatLng = new google.maps.LatLng(end.latitude, end.longitude);
-
-    directionsService.route({
-        origin: startLatLng,
-        destination: endLatLng,
-        travelMode: google.maps.TravelMode.DRIVING,
-    }, (response, status) => {
-        if (status === 'OK') {
-            directionsRenderer.setDirections(response);
-        } else {
-            window.alert('Directions request failed due to ' + status);
-        }
-    });
-}
-*/
 
 async function fetchRoute(message) {
     try {

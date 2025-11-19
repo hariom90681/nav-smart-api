@@ -160,3 +160,24 @@ async def ws_ollama(websocket: WebSocket):
                             continue
     except WebSocketDisconnect:
         return
+
+class ChatRequest(BaseModel):
+    message: str
+
+@chat_router.post("/chat/ollama")
+async def chat_ollama(req: ChatRequest):
+    try:
+        async with httpx.AsyncClient(timeout=None) as client:
+            payload = {
+                "model": OLLAMA_MODEL,
+                "messages": [{"role": "user", "content": req.message}],
+                "stream": False
+            }
+            r = await client.post(f"{OLLAMA_HOST}/api/chat", json=payload)
+            r.raise_for_status()
+            data = r.json()
+            if "message" in data and data["message"].get("content"):
+                return {"reply": data["message"]["content"]}
+            return {"reply": data.get("response", "")}
+    except Exception as e:
+        return {"error": str(e)}

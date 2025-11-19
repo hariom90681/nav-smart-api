@@ -11,3 +11,4 @@ python-multipart
 polyline
 requests
 httpx
+websockets
