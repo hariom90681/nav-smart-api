@@ -107,7 +107,7 @@ button {
     width: 100%;
     display: flex;
     justify-content: center;
-    gap: 40px;
+    gap: 10px;
     padding: 10px;
     background-color: #ffffff;
     border-top: 1px solid #ddd;
@@ -116,8 +116,7 @@ button {
 }
 
 #chatControls button {
-    width: 45%;
-    max-width: 220px;
+    min-width: 100px;
     padding: 12px;
     background-color: #c2fe06;
     color: #002733;
@@ -134,4 +133,12 @@ button {
 
 #chatControls button:active {
     transform: scale(0.97);
+}
+
+#chatControls input#chatInput {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1em;
 }

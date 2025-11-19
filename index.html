@@ -24,18 +24,21 @@
         <div class="right-panel">
             <div id="chatbot">
                 <div id="chatContent">
-                    <h3>AI Itinerary Assistant</h3>
-                    
+                    <h3>AI Assistant</h3>
+                    <div id="messages"></div>
+                    <div id="itineraryDisplay">
+                        <h4>Your Itinerary</h4>
+                        <ul id="itineraryList"></ul>
+                    </div>
                 </div>
 
                 <div id="chatControls">
-                        <div id="transcription" style="font-style: italic; color: #555;"></div>
-                </div>
-                <!-- Buttons at the bottom -->
-                <div id="chatControls">
+                    <input id="chatInput" type="text" placeholder="Type a message" />
+                    <button id="sendBtn">Send</button>
                     <button id="micBtn">🎙️ Speak Destination</button>
                     <button id="itineraryBtn">🧭 Generate Itinerary</button>
                 </div>
+                <div id="transcription" style="font-style: italic; color: #555;"></div>
             </div>
         </div>
     </div>

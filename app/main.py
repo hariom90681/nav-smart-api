@@ -22,7 +22,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-from app.nav_route import route_router, itinerary_router
+from app.nav_route import route_router, itinerary_router, chat_router
 
 app = FastAPI(title="AI Navigation App", version="1.0")
 
@@ -35,6 +35,7 @@ app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 # Include routers
 app.include_router(route_router)
 app.include_router(itinerary_router)
+app.include_router(chat_router)
 
 # Serve index.html at root
 @app.get("/")

@@ -8,3 +8,6 @@ librosa
 soundfile
 geopy
 python-multipart
+polyline
+requests
+httpx

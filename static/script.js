@@ -1,4 +1,6 @@
 let map, directionsService, directionsRenderer, transcriptionDiv;
+let chatSocket;
+let lastAssistantEl;
 
 function initMap() {
     directionsService = new google.maps.DirectionsService();
@@ -25,6 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     transcriptionDiv = document.getElementById('transcription');
+    setupChatSocket();
+    const sendBtn = document.getElementById('sendBtn');
+    const chatInput = document.getElementById('chatInput');
+    if (sendBtn) sendBtn.addEventListener('click', sendChatMessage);
+    if (chatInput) chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChatMessage(); });
 
     document.getElementById('micBtn').addEventListener('click', startVoiceRecognition);
     document.getElementById('itineraryBtn').addEventListener('click', () => {
@@ -44,6 +51,11 @@ function startVoiceRecognition() {
         const spokenText = event.results[0][0].transcript;
         transcriptionDiv.textContent = `You said: "${spokenText}"`;
         fetchRoute(spokenText);
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            appendMessage('You', spokenText);
+            lastAssistantEl = appendMessage('Assistant', '');
+            chatSocket.send(spokenText);
+        }
     };
 
     recognition.onerror = (event) => {
@@ -53,6 +65,37 @@ function startVoiceRecognition() {
 
 function getCleanMessage() {
     return transcriptionDiv.textContent.replace('You said: "', '').replace('"', '');
+}
+
+function setupChatSocket() {
+    const wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/ollama';
+    chatSocket = new WebSocket(wsUrl);
+    chatSocket.onopen = () => { appendMessage('System', 'Connected to chat'); };
+    chatSocket.onerror = () => { appendMessage('System', 'Chat connection error'); };
+    chatSocket.onclose = () => { setTimeout(setupChatSocket, 1500); };
+    chatSocket.onmessage = (evt) => {
+        if (!lastAssistantEl) { lastAssistantEl = appendMessage('Assistant', ''); }
+        lastAssistantEl.textContent += evt.data;
+    };
+}
+
+function appendMessage(role, text) {
+    const container = document.getElementById('messages') || document.getElementById('chatContent');
+    const p = document.createElement('p');
+    p.textContent = `${role}: ${text}`;
+    container.appendChild(p);
+    container.scrollTop = container.scrollHeight;
+    return p;
+}
+
+function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input ? input.value.trim() : '';
+    if (!text || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+    appendMessage('You', text);
+    lastAssistantEl = appendMessage('Assistant', '');
+    chatSocket.send(text);
+    input.value = '';
 }
 
 /*
