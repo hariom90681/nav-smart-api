@@ -1,16 +1,20 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from geopy.geocoders import Nominatim
 import json
 
 from app.route_details import get_all_stop_points
-from app.mistral_client import mistral_client  # ✅ import Mistral client
+import httpx
 
 # Initialize geocoder
 geolocator = Nominatim(user_agent="navsmart")
+import os
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
 
 route_router = APIRouter(tags=["Route"])
 itinerary_router = APIRouter(tags=["Itinerary"])
+chat_router = APIRouter(tags=["Chat"])
 
 class MessageRequest(BaseModel):
     message: str
@@ -112,22 +116,68 @@ async def get_itinerary(req: ItineraryRequest):
     """
 
     try:
-        # ✅ Call Mistral model
-        response = mistral_client.text_generation(
-            prompt,
-            max_new_tokens=800,
-            temperature=0.7,
-            repetition_penalty=1.1,
-        )
-
-        # Clean and parse the output
-        content = response.strip()
-        content = content.replace("```json", "").replace("```", "").strip()
-
-        itinerary_data = json.loads(content)
-        return itinerary_data
-
+        async with httpx.AsyncClient(timeout=None) as client:
+            payload = {
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False
+            }
+            r = await client.post(f"{OLLAMA_HOST}/api/generate", json=payload)
+            r.raise_for_status()
+            data = r.json()
+            content = data.get("response", "").strip()
+            content = content.replace("```json", "").replace("```", "").strip()
+            itinerary_data = json.loads(content)
+            return itinerary_data
     except json.JSONDecodeError:
-        return {"error": "Model output was not valid JSON", "raw_output": content}
+        return {"error": "Model output was not valid JSON"}
     except Exception as e:
-        return {"error": f"Mistral API call failed: {str(e)}"}
+        return {"error": str(e)}
+
+@chat_router.websocket("/ws/ollama")
+async def ws_ollama(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        async with httpx.AsyncClient(timeout=None) as client:
+            while True:
+                incoming = await websocket.receive_text()
+                payload_chat = {
+                    "model": OLLAMA_MODEL,
+                    "messages": [{"role": "user", "content": incoming}],
+                    "stream": True
+                }
+                async with client.stream("POST", f"{OLLAMA_HOST}/api/chat", json=payload_chat) as resp:
+                    async for line in resp.aiter_lines():
+                        if not line:
+                            continue
+                        try:
+                            obj = json.loads(line)
+                            if "message" in obj and obj["message"].get("content"):
+                                await websocket.send_text(obj["message"]["content"])
+                            elif "response" in obj:
+                                await websocket.send_text(obj["response"])
+                        except Exception:
+                            continue
+    except WebSocketDisconnect:
+        return
+
+class ChatRequest(BaseModel):
+    message: str
+
+@chat_router.post("/chat/ollama")
+async def chat_ollama(req: ChatRequest):
+    try:
+        async with httpx.AsyncClient(timeout=None) as client:
+            payload = {
+                "model": OLLAMA_MODEL,
+                "messages": [{"role": "user", "content": req.message}],
+                "stream": False
+            }
+            r = await client.post(f"{OLLAMA_HOST}/api/chat", json=payload)
+            r.raise_for_status()
+            data = r.json()
+            if "message" in data and data["message"].get("content"):
+                return {"reply": data["message"]["content"]}
+            return {"reply": data.get("response", "")}
+    except Exception as e:
+        return {"error": str(e)}
