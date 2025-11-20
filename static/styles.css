@@ -94,9 +94,9 @@ button {
 /* Scrollable chat + itinerary content */
 #chatContent {
     flex: 1;
+    min-height: 0;
     padding: 20px;
     overflow-y: auto;
-    margin-bottom: 70px;
 }
 
 /* Buttons bar at the bottom */
@@ -136,12 +136,38 @@ button {
 }
 
 #messages {
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 0;
 }
 
-#messages p {
+.message {
+    max-width: 80%;
+    padding: 10px 12px;
+    border-radius: 16px;
     white-space: pre-wrap;
-    margin: 0.5em 0;
+    word-break: break-word;
+}
+
+.message.user {
+    align-self: flex-end;
+    background-color: #c2fe06;
+    color: #002733;
+    border-bottom-right-radius: 6px;
+}
+
+.message.assistant {
+    align-self: flex-start;
+    background-color: #002733;
+    color: #c2fe06;
+    border-bottom-left-radius: 6px;
+}
+
+.message.system {
+    align-self: center;
+    background-color: transparent;
+    color: #666;
 }
 #chatControls input#chatInput {
     flex: 1;
