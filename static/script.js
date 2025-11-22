@@ -219,3 +219,12 @@ function addItineraryMarkers(itinerary) {
         });
     });
 }
+
+const scroller = document.getElementById('chatContent');
+if (scroller) {
+    scroller.scrollTo({
+        top: scroller.scrollHeight,
+        behavior: "smooth"
+    });
+}
+
