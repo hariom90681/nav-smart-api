@@ -34,10 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chatInput) chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChatMessage(); });
 
     document.getElementById('micBtn').addEventListener('click', startVoiceRecognition);
-    document.getElementById('itineraryBtn').addEventListener('click', () => {
-        const message = getCleanMessage();
-        fetchItinerary(message);
-    });
+    // document.getElementById('itineraryBtn').addEventListener('click', () => {
+    //     const message = getCleanMessage();
+    //     fetchItinerary(message);
+    // });
 });
 
 function startVoiceRecognition() {

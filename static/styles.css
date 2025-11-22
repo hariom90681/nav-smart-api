@@ -80,6 +80,7 @@ button {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    height: calc(100vh - 120px);
 }
 
 /* Chatbot main layout */
@@ -97,6 +98,9 @@ button {
     min-height: 0;
     padding: 20px;
     overflow-y: auto;
+    overflow-x: hidden;
+    margin-bottom: 70px;
+    max-height: calc(100vh - 250px);
 }
 
 /* Buttons bar at the bottom */
