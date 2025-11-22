@@ -34,10 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chatInput) chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChatMessage(); });
 
     document.getElementById('micBtn').addEventListener('click', startVoiceRecognition);
-    document.getElementById('itineraryBtn').addEventListener('click', () => {
-        const message = getCleanMessage();
-        fetchItinerary(message);
-    });
+    // document.getElementById('itineraryBtn').addEventListener('click', () => {
+    //     const message = getCleanMessage();
+    //     fetchItinerary(message);
+    // });
 });
 
 function startVoiceRecognition() {
@@ -81,12 +81,17 @@ function setupChatSocket() {
 
 function appendMessage(role, text) {
     const container = document.getElementById('messages') || document.getElementById('chatContent');
-    const p = document.createElement('p');
-    p.className = role.toLowerCase();
-    p.textContent = `${role}: ${text}`;
-    container.appendChild(p);
-    container.scrollTop = container.scrollHeight;
-    return p;
+    const div = document.createElement('div');
+    let cls = 'assistant';
+    if (role.toLowerCase() === 'you') cls = 'user';
+    else if (role.toLowerCase() === 'assistant') cls = 'assistant';
+    else cls = 'system';
+    div.className = `message ${cls}`;
+    div.textContent = text || '';
+    container.appendChild(div);
+    const scroller = document.getElementById('chatContent');
+    if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    return div;
 }
 
 function sendChatMessage() {
@@ -214,3 +219,12 @@ function addItineraryMarkers(itinerary) {
         });
     });
 }
+
+const scroller = document.getElementById('chatContent');
+if (scroller) {
+    scroller.scrollTo({
+        top: scroller.scrollHeight,
+        behavior: "smooth"
+    });
+}
+
