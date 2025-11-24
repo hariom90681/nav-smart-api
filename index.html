@@ -35,7 +35,7 @@
                     <input id="chatInput" type="text" placeholder="Type a message" />
                     <button id="sendBtn">Send</button>
                     <button id="micBtn">Speak</button>
-                    <!--<button id="itineraryBtn">Generate Itinerary</button>-->
+                    <button id="itineraryBtn">Generate Itinerary</button>
                 </div>
                 <div id="transcription" style="font-style: italic; color: #555;"></div>
             </div>
@@ -48,8 +48,15 @@
 
     <!-- Link external JavaScript -->
     <script defer src="/static/script.js"></script>
-
-    <!-- Google Maps API (replace My_Key with your actual key) -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDDgJKSce1dwXMTZ886PDMqjaJrF9z1ErA"></script>
+    <script src="/config.js"></script>
+    <script>
+      (function(){
+        var s=document.createElement('script');
+        var key=(window.GOOGLE_MAPS_API_KEY||'');
+        s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(key);
+        s.async=true; s.defer=true;
+        document.head.appendChild(s);
+      })();
+    </script> 
 </body>
 </html>

@@ -11,6 +11,7 @@ geolocator = Nominatim(user_agent="navsmart")
 import os
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
+GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
 
 route_router = APIRouter(tags=["Route"])
 itinerary_router = APIRouter(tags=["Itinerary"])
@@ -49,7 +50,7 @@ async def get_details_route(req: MessageRequest):
     route_data = get_all_stop_points(
         start_location,
         end_location,
-        "AIzaSyDDgJKSce1dwXMTZ886PDMqjaJrF9z1ErA"  # Your Google Maps API key
+        GOOGLE_MAPS_API_KEY
     )
 
     return route_data
@@ -99,7 +100,7 @@ async def get_route(req: MessageRequest):
 @itinerary_router.post("/location/get-itinerary")
 async def get_itinerary(req: ItineraryRequest):
     prompt = f"""
-Your anme is NavSmart. You are a Road Itinerary Generator.
+Your name is 'NavSmart'. You are a Road Itinerary Generator.
 Only produce road-based itineraries (driving) with concise along-route recommendations.
 Do not include flights, trains, hotels, or off-topic content.
 Respond in valid JSON only, with this exact schema:

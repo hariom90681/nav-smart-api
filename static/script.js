@@ -1,6 +1,9 @@
 let map, directionsService, directionsRenderer, transcriptionDiv;
 let chatSocket;
 let lastAssistantEl;
+let startMarker, endMarker;
+let itineraryMarkers = [];
+let routePolyline;
 
 function initMap() {
     directionsService = new google.maps.DirectionsService();
@@ -34,10 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chatInput) chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChatMessage(); });
 
     document.getElementById('micBtn').addEventListener('click', startVoiceRecognition);
-    // document.getElementById('itineraryBtn').addEventListener('click', () => {
-    //     const message = getCleanMessage();
-    //     fetchItinerary(message);
-    // });
+    document.getElementById('itineraryBtn').addEventListener('click', () => {
+        const message = getCleanMessage();
+        fetchItinerary(message);
+    });
 });
 
 function startVoiceRecognition() {
@@ -100,6 +103,9 @@ function sendChatMessage() {
     if (!text) return;
     appendMessage('You', text);
     lastAssistantEl = appendMessage('Assistant', '');
+    if (/\bfrom\b[\s\S]*\bto\b/i.test(text)) {
+        fetchRoute(text);
+    }
     if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
         chatSocket.send(text);
     } else {
@@ -143,16 +149,16 @@ async function fetchRoute(message) {
 function drawRoutePolyline(points) {
     const path = points.map(([lat, lng]) => ({ lat, lng }));
 
-    // Center the map
     if (path.length > 0) {
-        map.setCenter(path[0]);
+        const bounds = new google.maps.LatLngBounds();
+        path.forEach(p => bounds.extend(p));
+        map.fitBounds(bounds);
     }
 
-    // Clear old route
     directionsRenderer.setMap(null);
 
-    // Draw polyline
-    new google.maps.Polyline({
+    if (routePolyline) routePolyline.setMap(null);
+    routePolyline = new google.maps.Polyline({
         path: path,
         geodesic: true,
         strokeColor: "#007bff",
@@ -160,6 +166,13 @@ function drawRoutePolyline(points) {
         strokeWeight: 4,
         map: map
     });
+
+    if (startMarker) startMarker.setMap(null);
+    if (endMarker) endMarker.setMap(null);
+    if (path.length > 0) {
+        startMarker = new google.maps.Marker({ map: map, position: path[0], title: "Start" });
+        endMarker = new google.maps.Marker({ map: map, position: path[path.length - 1], title: "Destination" });
+    }
 
     transcriptionDiv.textContent = "✅ Route plotted.";
 }
@@ -175,10 +188,8 @@ async function fetchItinerary(message) {
 
         const data = await response.json();
         if (data.itinerary && Array.isArray(data.itinerary)) {
-            data.itinerary.forEach(day => {
-                displayItinerary(data);
-                addItineraryMarkers(data.itinerary);
-            });
+            displayItinerary(data);
+            addItineraryMarkers(data.itinerary);
         } else {
             transcriptionDiv.textContent = 'Could not generate itinerary.';
         }
@@ -189,15 +200,20 @@ async function fetchItinerary(message) {
 
 function displayItinerary(data) {
     const itineraryList = document.getElementById('itineraryList');
-    itineraryList.innerHTML = ''; // Clear previous
+    itineraryList.innerHTML = '';
 
     if (data.itinerary) {
         data.itinerary.forEach(day => {
             const item = document.createElement('li');
-            item.innerHTML = `<strong>${day.day} - ${day.location}</strong><br>${day.activities.join(', ')}`;
+            if (day.segment && Array.isArray(day.recommendations)) {
+                item.innerHTML = `<strong>${day.day} - ${day.segment}</strong><br>${day.recommendations.join(', ')}`;
+            } else if (day.location && Array.isArray(day.activities)) {
+                item.innerHTML = `<strong>${day.day} - ${day.location}</strong><br>${day.activities.join(', ')}`;
+            } else {
+                item.textContent = JSON.stringify(day);
+            }
             itineraryList.appendChild(item);
         });
-
         transcriptionDiv.textContent = data.reply;
     } else {
         transcriptionDiv.textContent = 'Could not generate itinerary.';
@@ -206,17 +222,35 @@ function displayItinerary(data) {
 
 function addItineraryMarkers(itinerary) {
     const geocoder = new google.maps.Geocoder();
+    itineraryMarkers.forEach(m => m.setMap(null));
+    itineraryMarkers = [];
 
     itinerary.forEach(day => {
-        geocoder.geocode({ address: day.location }, (results, status) => {
-            if (status === 'OK') {
-                new google.maps.Marker({
-                    map: map,
-                    position: results[0].geometry.location,
-                    title: `${day.day}: ${day.location}`
+        if (Array.isArray(day.recommendations)) {
+            day.recommendations.forEach(rec => {
+                geocoder.geocode({ address: rec }, (results, status) => {
+                    if (status === 'OK' && results[0]) {
+                        const marker = new google.maps.Marker({
+                            map: map,
+                            position: results[0].geometry.location,
+                            title: `${day.day}: ${rec}`
+                        });
+                        itineraryMarkers.push(marker);
+                    }
                 });
-            }
-        });
+            });
+        } else if (day.location) {
+            geocoder.geocode({ address: day.location }, (results, status) => {
+                if (status === 'OK' && results[0]) {
+                    const marker = new google.maps.Marker({
+                        map: map,
+                        position: results[0].geometry.location,
+                        title: `${day.day}: ${day.location}`
+                    });
+                    itineraryMarkers.push(marker);
+                }
+            });
+        }
     });
 }
 

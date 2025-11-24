@@ -1,5 +1,6 @@
 import requests
 import polyline
+import os
 
 def get_all_stop_points(start, stop, api_key):
     url = "https://maps.googleapis.com/maps/api/directions/json"
@@ -33,5 +34,5 @@ def get_all_stop_points(start, stop, api_key):
 
     return poly_points
 
-api_key = "AIzaSyDDgJKSce1dwXMTZ886PDMqjaJrF9z1ErA"
+api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
 points = get_all_stop_points("Kolkata,IN", "Delhi,IN", api_key)
