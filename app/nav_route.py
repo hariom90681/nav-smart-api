@@ -99,21 +99,23 @@ async def get_route(req: MessageRequest):
 @itinerary_router.post("/location/get-itinerary")
 async def get_itinerary(req: ItineraryRequest):
     prompt = f"""
-    You are an expert travel planner AI.
-    User message: "{req.message}"
-
-    Generate a travel itinerary in valid JSON format:
+Your anme is NavSmart. You are a Road Itinerary Generator.
+Only produce road-based itineraries (driving) with concise along-route recommendations.
+Do not include flights, trains, hotels, or off-topic content.
+Respond in valid JSON only, with this exact schema:
+{{
+  "reply": "<short friendly summary>",
+  "itinerary": [
     {{
-      "reply": "<short friendly summary>",
-      "itinerary": [
-        {{
-          "day": "Day 1",
-          "location": "<city or area>",
-          "activities": ["<activity1>", "<activity2>", ...]
-        }}
-      ]
+      "day": "Day 1",
+      "segment": "<Start> -> <End>",
+      "recommendations": ["<place or view on/near the route>", "..."]
     }}
-    """
+  ]
+}}
+
+User message: "{req.message}"
+"""
 
     try:
         async with httpx.AsyncClient(timeout=None) as client:
@@ -143,7 +145,10 @@ async def ws_ollama(websocket: WebSocket):
                 incoming = await websocket.receive_text()
                 payload_chat = {
                     "model": OLLAMA_MODEL,
-                    "messages": [{"role": "user", "content": incoming}],
+                    "messages": [
+                        {"role": "system", "content": "You are a Road Itinerary Generator. Only provide road-based itineraries with concise along-route recommendations. No flights, trains, hotels, or unrelated content."},
+                        {"role": "user", "content": incoming}
+                    ],
                     "stream": True
                 }
                 async with client.stream("POST", f"{OLLAMA_HOST}/api/chat", json=payload_chat) as resp:
