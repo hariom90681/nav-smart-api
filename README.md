@@ -17,16 +17,16 @@ The project aims to provide a modular, audio-first navigation experience.
 ---
 
 ## 📁 Repository Structure  
-
--/
--├── app/ # Core API application logic, routes, controllers
--├── static/ # Front-end assets, audio files, etc.
--├── requirements.txt # Python dependencies
--├── run.py # Main file to launch server
--├── index.html # Test UI / Landing page
--├── .gitignore
--└── README.md
-
+```
+/
+├── app/ # Core API application logic, routes, controllers
+├── static/ # Front-end assets, audio files, etc.
+├── requirements.txt # Python dependencies
+├── run.py # Main file to launch server
+├── index.html # Test UI / Landing page
+├── .gitignore
+└── README.md
+```
 ---
 
 ## 🛠️ Getting Started  
